@@ -1,48 +1,56 @@
 # NOETIVELA-open
 
-**Model, Routing & Inference Fabric — 开放集成面**
+**Model, Routing & Inference Fabric — Open Integration Surface**
 AxisRobo Architecture & Research Program
 
-> NOETIVELA is an enterprise inference fabric that catalogs models and endpoints,
-> converts task requirements into governed inference contracts, and routes each
-> request across cloud, private and edge intelligence using policy, quality,
-> latency, reliability, locality and total-cost evidence.
+> **中文文档:** [README.zh-CN.md](README.zh-CN.md)
 
-本仓库是 NOETIVELA 的**对外开放面**，采用 **Apache-2.0** 许可，可被任意
-（包括商业闭源）产品自由集成。
+NOETIVELA is an enterprise inference fabric that catalogs models and endpoints,
+converts task requirements into **governed inference contracts**, and routes each
+request across cloud, private and edge intelligence using policy, quality,
+latency, reliability, locality and total-cost evidence.
 
-| 仓库 | 角色 | 许可 |
+This repository is NOETIVELA's **open integration surface**, licensed under
+**Apache-2.0** so that any product (including closed-source commercial ones) can
+integrate it freely.
+
+| Repository | Role | License |
 |---|---|---|
-| **NOETIVELA-open（本仓库）** | SDK、examples、API 规格、CLI/binary、公开文档 | Apache-2.0 |
-| [NOETIVELA](../NOETIVELA) | 核心引擎实现 | AGPL-3.0 |
-| [NOETIVELA-ee](../NOETIVELA-ee) | 企业版高价值功能 | 商业许可 |
+| **NOETIVELA-open (this repo)** | SDKs, examples, authoritative API specs, CLI/binaries, public docs | Apache-2.0 |
+| [NOETIVELA](../NOETIVELA) | Core engine implementation (registry, routing, gateway, telemetry) | AGPL-3.0 |
+| [NOETIVELA-ee](../NOETIVELA-ee) | Enterprise edition: multi-tenancy, HA, governance, learned routing | Commercial |
 
-## 本仓库包含什么
+## What's in this repository
 
-| 目录 | 内容 |
+| Directory | Contents |
 |---|---|
-| `contracts/` | **权威 API 规格**：OpenAPI（data/control plane）、Protobuf、InferenceContract JSON Schema、Routing Policy DSL 语法 |
-| `sdk/` | 官方 SDK：Go / Python / TypeScript（后续 Java / Rust） |
-| `examples/` | quickstart、合同审查 Agent、多 Agent 软件工程、边缘自治等端到端示例 |
-| `cli/` | `noetivela` CLI 源码与预编译 binary 发布说明 |
-| `docs/` | 公开用户文档：概念、快速开始、迁移指南、能力矩阵 |
+| `contracts/` | **Authoritative API specs**: OpenAPI (data/control plane), JSON Schema for the InferenceContract / ModelProfile / RoutingDecision, Policy DSL grammar |
+| `sdk/` | Official SDKs: Go / Python / TypeScript (Java / Rust planned) |
+| `examples/` | End-to-end examples — quickstart (contract → validate → eligible → chat → decision trace); more planned (contract-review-agent, multi-agent-swe, edge-robotics, model-retirement) |
+| `cli/` | `noetivela` CLI source and release notes for prebuilt binaries |
 
-## 本仓库不包含什么
+Public user documentation (concepts, quickstart, migration guide, capability
+matrix) is under active development and will be published on the docs site.
+Internal design and development docs live in the NOETIVELA-ee repository.
 
-- 核心引擎实现（在 NOETIVELA core，AGPL）。
-- 企业功能（多租户、HA、TCoS/FinOps、learned routing 等，在 NOETIVELA-ee）。
-- 任何 provider credential 或客户配置。
+## What's NOT in this repository
 
-## 快速开始
+- The core engine implementation (in NOETIVELA core, AGPL).
+- Enterprise features (multi-tenancy, HA, TCoS/FinOps, learned routing, etc.,
+  in NOETIVELA-ee).
+- Any provider credential or customer configuration.
+
+## Quickstart
 
 ```bash
-# 1. 起控制面（bootstrap 示例目录）与数据面（示例 policy）
+# 1. Start the control plane (bootstrap a sample catalog) and the data plane
+#    (a sample routing policy)
 NOETIVELA_BOOTSTRAP_FILE=../NOETIVELA/deploy/bootstrap/manifest.example.json \
     go run ../NOETIVELA/backend/cmd/noetivela-controller &   # :8081
 NOETIVELA_POLICY_FILE=../NOETIVELA/deploy/policies/legal.confidential.npl \
     go run ../NOETIVELA/backend/cmd/noetivela-gateway &       # :8080
 
-# 2. 用 Go SDK 提交 Inference Contract（而非硬编码模型名）
+# 2. Submit an Inference Contract via the Go SDK (no hardcoded model names)
 go run ./examples/quickstart
 ```
 
@@ -57,21 +65,21 @@ c := client.New("http://localhost:8080").WithContract(&client.Contract{
     Context:  &client.Context{SessionID: "case-8821"},
 })
 
-// 不消耗 token 的可满足性检查 + 排名
+// Token-free satisfiability check + ranking
 res, _ := c.ValidateContract(ctx, contract, "legal-confidential-v2")
 ranked, _ := c.EligibleCandidates(ctx, contract, "legal-confidential-v2")
 
-// 受治理的推理请求；返回结果 + RoutingDecision + TCoS
+// Governed inference request; returns result + RoutingDecision + TCoS
 chat, _ := c.Chat(ctx, "auto", []client.Message{{Role: "user", Content: "..."}})
 fmt.Println(chat.Noetivela.EndpointRef, chat.Noetivela.TCoS.Total)
 ```
 
-## 版本对齐
+## Version alignment
 
-三仓库共享同一 semver minor 线；本仓库的 `contracts/` 是 API 规格的权威
-发布点，core / ee 引用固定版本。Breaking change 必须先在本仓库标记
-deprecated。
+The three repositories share the same semver minor line. This repository's
+`contracts/` is the authoritative release point for the API specs; core and ee
+pin fixed versions. Breaking changes must first be marked deprecated here.
 
 ## License
 
-Apache License 2.0 — 见 [LICENSE](LICENSE)。
+Apache License 2.0 — see [LICENSE](LICENSE).
