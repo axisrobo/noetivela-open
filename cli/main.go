@@ -23,7 +23,7 @@ var baseURL = flag.String("url", defaultURL(), "NOETIVELA gateway base URL (defa
 
 // version is injected at build time (goreleaser ldflags). Default aligns with
 // the NOETIVELA release milestone.
-var version = "0.1.0-alpha"
+var version = "0.1.0-beta"
 
 func defaultURL() string {
 	if v := os.Getenv("NOETIVELA_URL"); v != "" {
