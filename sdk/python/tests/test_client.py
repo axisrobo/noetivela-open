@@ -61,6 +61,18 @@ class MockGateway(BaseHTTPRequestHandler):
             self._send(200, {"records": 10, "savings_percent": 50.0, "verdict": "PASS",
                              "baseline": {"strategy": "fixed:exp", "quality_adjusted_tcos": 0.02, "served_count": 10, "denied_count": 0},
                              "routed": {"strategy": "policy_routed", "quality_adjusted_tcos": 0.01, "served_count": 10, "denied_count": 0}})
+        elif self.path == "/v1/train":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
+            assert body.get("version_id") == "v2", "version_id required"
+            assert body.get("tcos_weight") == 0.5 and body.get("min_samples") == 10
+            samples = body.get("samples")
+            assert samples and len(samples) == 2, "dataset samples required"
+            assert {"features", "candidate_ref", "quality", "tcos"} <= set(samples[0])
+            assert samples[0]["features"]["task"] == "contract_clause_extraction"
+            self._send(200, {"version_id": body["version_id"], "trained_samples": 2,
+                             "validate_mae": 0.12, "min_confidence": 0.6,
+                             "artifact_digest": "sha256:0123456789abcdef0123456789abcdef"})
         else:
             # unsatisfiable contract
             self._send(422, {"error": {"type": "unsatisfiable_contract",
@@ -127,6 +139,47 @@ def test_replay(srv):
     assert res.records == 10
     assert res.verdict == "PASS"
     assert res.savings_percent == 50.0
+
+
+def test_train_dataset_upload(srv):
+    c = Client(f"http://127.0.0.1:{srv}")
+    samples = [
+        {
+            "features": {
+                "task": "contract_clause_extraction",
+                "domain": "legal",
+                "input_tokens_est": 1200,
+                "has_session": True,
+                "tool_use_required": False,
+                "structured_output": False,
+                "has_deadline": True,
+                "has_latency_p95": True,
+            },
+            "candidate_ref": "ep-openai-sg/v1",
+            "quality": 0.9,
+            "tcos": 0.002,
+        },
+        {
+            "features": {
+                "task": "code_review",
+                "domain": "software",
+                "input_tokens_est": 3000,
+                "has_session": False,
+                "tool_use_required": True,
+                "structured_output": False,
+                "has_deadline": False,
+                "has_latency_p95": False,
+            },
+            "candidate_ref": "ep-groq-sg/v1",
+            "quality": 0.4,
+            "tcos": 0.0001,
+        },
+    ]
+    res = c.train("v2", samples=samples)
+    assert res["version_id"] == "v2"
+    assert res["trained_samples"] == 2
+    assert res["min_confidence"] == 0.6
+    assert res["artifact_digest"].startswith("sha256:")
 
 
 def test_unsatisfiable(srv):

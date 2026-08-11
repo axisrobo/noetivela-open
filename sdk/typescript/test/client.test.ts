@@ -44,6 +44,15 @@ function mockGateway(): Promise<{ server: Server; port: number }> {
           send(200, { records: 5, savings_percent: 40.0, verdict: "PASS",
             baseline: { strategy: "fixed", quality_adjusted_tcos: 0.02, served_count: 5, denied_count: 0 },
             routed: { strategy: "routed", quality_adjusted_tcos: 0.012, served_count: 5, denied_count: 0 } });
+        } else if (path === "/v1/train") {
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          assert.equal(body.version_id, "v2");
+          assert.equal(body.tcos_weight, 0.5);
+          assert.ok(Array.isArray(body.samples) && body.samples.length === 2, "dataset samples required");
+          assert.ok(body.samples[0].features && body.samples[0].candidate_ref);
+          assert.equal(typeof body.samples[0].quality, "number");
+          send(200, { version_id: body.version_id, trained_samples: 2, validate_mae: 0.12,
+            min_confidence: 0.6, artifact_digest: "sha256:0123456789abcdef0123456789abcdef" });
         } else {
           send(422, { error: { type: "unsatisfiable_contract", message: "no candidate",
             failed_gates: [{ gate: "policy", reason: "region_not_allowed" }] } });
@@ -107,6 +116,27 @@ test("replay", async () => {
     const res = await c.replay("exp-ep", "legal");
     assert.equal(res.verdict, "PASS");
     assert.ok(res.savings_percent > 0);
+  } finally {
+    server.close();
+  }
+});
+
+test("train with dataset upload", async () => {
+  const { server, port } = await mockGateway();
+  try {
+    const c = new Client(`http://127.0.0.1:${port}`);
+    const res = await c.train("v2", {
+      samples: [
+        { features: { task: "contract_clause_extraction", domain: "legal", input_tokens_est: 1200 },
+          candidate_ref: "ep-openai-sg/v1", quality: 0.9, tcos: 0.002 },
+        { features: { task: "code_review", input_tokens_est: 3000 },
+          candidate_ref: "ep-groq-sg/v1", quality: 0.4, tcos: 0.0001 },
+      ],
+    });
+    assert.equal(res.version_id, "v2");
+    assert.equal(res.trained_samples, 2);
+    assert.equal(res.min_confidence, 0.6);
+    assert.ok(res.artifact_digest?.startsWith("sha256:"));
   } finally {
     server.close();
   }

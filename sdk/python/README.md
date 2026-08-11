@@ -52,6 +52,34 @@ rep = c.replay("ep-openai-sg", policy="legal-confidential-v2")
 print(rep.verdict, f"{rep.savings_percent:.2f}%")
 ```
 
+# 6. Learned-router training with an explicit offline dataset.
+samples = [
+    {
+        "features": {  # prompt-free features, see routing/features.go
+            "task": "contract_clause_extraction",
+            "domain": "legal",
+            "input_tokens_est": 1200,
+            "has_session": True,
+            "tool_use_required": False,
+            "structured_output": False,
+            "has_deadline": True,
+            "has_latency_p95": True,
+        },
+        "candidate_ref": "ep-openai-sg/v1",
+        "quality": 0.9,     # evidence feedback: judged answer quality (0..1)
+        "tcos": 0.002,      # measured total cost of service for that route
+    },
+    {
+        "features": {"task": "code_review", "domain": "software", "input_tokens_est": 3000},
+        "candidate_ref": "ep-groq-sg/v1",
+        "quality": 0.4,
+        "tcos": 0.0001,
+    },
+]
+trained = c.train("v2", samples=samples)
+print(trained["trained_samples"], trained["min_confidence"], trained["artifact_digest"])
+```
+
 Also available: `embeddings`, `decisions`, `get_decision`, `usage`.
 
 ## Development

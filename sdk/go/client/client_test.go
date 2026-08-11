@@ -52,6 +52,24 @@ func mockGateway(t *testing.T) *httptest.Server {
 		case "/v1/replay":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"records":10,"baseline":{"strategy":"fixed:exp","quality_adjusted_tcos":0.02,"served_count":10,"denied_count":0},"routed":{"strategy":"policy_routed","quality_adjusted_tcos":0.01,"served_count":10,"denied_count":0},"savings_percent":50.0,"verdict":"PASS"}`))
+		case "/v1/train":
+			var body struct {
+				VersionID  string              `json:"version_id"`
+				MinSamples int                 `json:"min_samples"`
+				Samples    []client.TrainSample `json:"samples"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if body.VersionID != "v2" {
+				t.Errorf("missing version_id, got %q", body.VersionID)
+			}
+			if len(body.Samples) != 2 {
+				t.Errorf("expected 2 dataset samples, got %d", len(body.Samples))
+			}
+			if body.Samples[0].CandidateRef != "ep-openai-sg/v1" || body.Samples[0].Features["task"] != "contract_clause_extraction" {
+				t.Errorf("unexpected dataset sample %+v", body.Samples[0])
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"version_id":"v2","trained_samples":2,"validate_mae":0.12,"min_confidence":0.6}`))
 		case "/v1/decisions/abc123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"decision_id":"abc123","candidates":[],"selection":{"endpoint_ref":"e1"}}`))
@@ -191,5 +209,28 @@ func TestReplay(t *testing.T) {
 	}
 	if res.SavingsPercent != 50.0 || res.Routed.QualityAdjTCoS >= res.Baseline.QualityAdjTCoS {
 		t.Fatalf("unexpected replay economics %+v", res)
+	}
+}
+
+func TestTrainWithDataset(t *testing.T) {
+	srv := mockGateway(t)
+	defer srv.Close()
+
+	c := client.New(srv.URL)
+	res, err := c.Train(context.Background(), client.TrainOptions{
+		VersionID:  "v2",
+		MinSamples: 10,
+		Samples: []client.TrainSample{
+			{Features: map[string]any{"task": "contract_clause_extraction", "input_tokens_est": 1200},
+				CandidateRef: "ep-openai-sg/v1", Quality: 0.9, TCoS: 0.002},
+			{Features: map[string]any{"task": "code_review", "input_tokens_est": 3000},
+				CandidateRef: "ep-groq-sg/v1", Quality: 0.4, TCoS: 0.0001},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.VersionID != "v2" || res.TrainedSamples != 2 || res.MinConfidence != 0.6 {
+		t.Fatalf("unexpected train result %+v", res)
 	}
 }
