@@ -74,6 +74,38 @@ chat, _ := c.Chat(ctx, "auto", []client.Message{{Role: "user", Content: "..."}})
 fmt.Println(chat.Noetivela.EndpointRef, chat.Noetivela.TCoS.Total)
 ```
 
+## CLI & Binaries
+
+The `noetivela` CLI talks to a running gateway/controller and drives the whole
+governed pipeline: contract → validate → eligible → chat → decision trace.
+
+**Install** — download the prebuilt binary for your platform from
+[GitHub Releases](../../releases) (linux / darwin / windows × amd64 / arm64,
+with `checksums.txt`), or build from source:
+
+```bash
+git clone https://github.com/axisrobo/noetivela-open.git
+cd noetivela-open/cli
+go build -o noetivela .      # then place it on your PATH
+```
+
+**Usage** (requires a running gateway — see Quickstart):
+
+```bash
+export NOETIVELA_URL=http://localhost:8080   # default: http://localhost:8080
+
+noetivela version
+noetivela contract validate -contract contract.json -policy legal-confidential-v2
+noetivela eligible -contract contract.json -policy legal-confidential-v2
+noetivela chat -contract contract.json -prompt "hi" -policy legal-confidential-v2
+noetivela decisions -limit 50
+noetivela usage
+noetivela replay -baseline fixed:gpt-x -policy legal-confidential-v2 -limit 1000
+noetivela train -version v2-table
+```
+
+An example InferenceContract JSON is at [`cli/contract.example.json`](cli/contract.example.json).
+
 ## Version alignment
 
 The three repositories share the same semver minor line. This repository's

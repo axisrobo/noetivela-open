@@ -70,6 +70,37 @@ chat, _ := c.Chat(ctx, "auto", []client.Message{{Role: "user", Content: "..."}})
 fmt.Println(chat.Noetivela.EndpointRef, chat.Noetivela.TCoS.Total)
 ```
 
+## CLI 与二进制
+
+`noetivela` CLI 对接运行中的 gateway/controller，驱动完整治理链路：
+contract → validate → eligible → chat → decision trace。
+
+**安装** — 从 [GitHub Releases](../../releases) 下载对应平台预编译二进制
+（linux / darwin / windows × amd64 / arm64，含 `checksums.txt`），或源码构建：
+
+```bash
+git clone https://github.com/axisrobo/noetivela-open.git
+cd noetivela-open/cli
+go build -o noetivela .      # 然后放入 PATH
+```
+
+**使用**（需要先启动 gateway，见"快速开始"）：
+
+```bash
+export NOETIVELA_URL=http://localhost:8080   # 默认 http://localhost:8080
+
+noetivela version
+noetivela contract validate -contract contract.json -policy legal-confidential-v2
+noetivela eligible -contract contract.json -policy legal-confidential-v2
+noetivela chat -contract contract.json -prompt "hi" -policy legal-confidential-v2
+noetivela decisions -limit 50
+noetivela usage
+noetivela replay -baseline fixed:gpt-x -policy legal-confidential-v2 -limit 1000
+noetivela train -version v2-table
+```
+
+示例 InferenceContract JSON 见 [`cli/contract.example.json`](cli/contract.example.json)。
+
 ## 版本对齐
 
 三仓库共享同一 semver minor 线；本仓库的 `contracts/` 是 API 规格的权威

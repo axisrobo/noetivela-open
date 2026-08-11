@@ -2,11 +2,9 @@
 # Built from the cli module; the sdk is consumed via replace (module path).
 version: 2
 project_name: noetivela-cli
-before:
-  hooks:
-    - go mod tidy
 builds:
   - id: noetivela
+    dir: cli
     main: .
     binary: noetivela
     env:
@@ -33,3 +31,9 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+release:
+  header: |
+    ## NOETIVELA CLI {{ .Tag }}
+
+    Prebuilt `noetivela` binaries for linux/darwin/windows on amd64/arm64.
+    See the README "CLI / Binaries" section for installation and usage.
