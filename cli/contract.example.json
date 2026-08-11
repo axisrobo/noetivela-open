@@ -1,0 +1,17 @@
+{
+  "task": "contract_clause_extraction",
+  "domain": "legal",
+  "language": ["zh", "en"],
+  "modality": ["text"],
+  "response_schema": "legal_clause_v3",
+  "quality": { "minimum_eval_grade": "A-" },
+  "latency": { "p95_ms": 3500 },
+  "context": { "session_id": "case-8821", "prefer_cache_locality": true },
+  "policy": {
+    "data_classification": "confidential",
+    "allowed_regions": ["sg", "cn-north"],
+    "provider_training": "prohibited",
+    "retention": "none"
+  },
+  "reliability": { "retry_budget": 2, "fallback": "same-or-higher-quality" }
+}

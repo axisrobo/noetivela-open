@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noetivela.axisrobo.dev/contracts/model-profile.schema.json",
+  "title": "ModelProfile",
+  "description": "Enterprise-verified model record. ModelIdentity/Version are separated from InferenceEndpoint; a provider model name is never a stable enterprise object.",
+  "type": "object",
+  "required": ["identity", "version", "capability_vector", "lifecycle"],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "required": ["family", "provider"],
+      "properties": {
+        "family": { "type": "string", "examples": ["claude", "gpt", "qwen", "llama"] },
+        "provider": { "type": "string", "description": "Model owner/vendor." },
+        "license": { "type": "string" },
+        "modalities": { "type": "array", "items": { "type": "string", "enum": ["text", "image", "audio", "video", "embedding", "rerank", "structured"] } }
+      }
+    },
+    "version": {
+      "type": "object",
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "string" },
+        "release_date": { "type": "string", "format": "date" },
+        "context_window": { "type": "integer", "minimum": 1 },
+        "max_output_tokens": { "type": "integer", "minimum": 1 },
+        "known_limitations": { "type": "array", "items": { "type": "string" } },
+        "retirement_date": { "type": "string", "format": "date" },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["digest"],
+            "properties": {
+              "digest": { "type": "string", "description": "Content digest for model-substitution detection." },
+              "runtime_image": { "type": "string" },
+              "provenance": { "type": "string" },
+              "security_scan": { "type": "string", "enum": ["pending", "passed", "failed"] },
+              "quantization": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "capability_vector": {
+      "type": "object",
+      "description": "Multi-dimensional capability, NOT a single smartness score.",
+      "properties": {
+        "task_capabilities": { "type": "array", "items": { "type": "string", "enum": ["classification", "generation", "reasoning", "coding", "tool_use", "planning_support", "translation", "embedding", "rerank", "speech"] } },
+        "tool_use": { "type": "object", "properties": { "supported": { "type": "boolean" }, "parallel_calls": { "type": "boolean" }, "strict_schema": { "type": "boolean" } } },
+        "structured_output": { "type": "object", "properties": { "supported": { "type": "boolean" }, "json_schema": { "type": "boolean" }, "strictness": { "type": "string", "enum": ["native_strict", "best_effort", "repair"] } } },
+        "operational_fit": { "type": "object", "properties": { "streaming": { "type": "boolean" }, "batch": { "type": "boolean" }, "latency_tier": { "type": "string", "enum": ["realtime", "interactive", "batch"] }, "determinism": { "type": "string", "enum": ["none", "seeded", "strict"] } } },
+        "safety_traits": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "description": "TEKMOVELA-attested evidence. Marketing claims are not evidence.",
+      "properties": {
+        "attestation_id": { "type": "string" },
+        "grades": { "type": "object", "additionalProperties": { "type": "string" }, "description": "task/domain -> grade, e.g. {\"legal_clause_v3\": \"A-\"}" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "dataset_version": { "type": "string" },
+        "evaluated_at": { "type": "string", "format": "date-time" },
+        "freshness_deadline": { "type": "string", "format": "date-time" }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": { "type": "string", "enum": ["discovered", "evaluating", "approved", "default", "restricted", "deprecated", "retired"] },
+        "state_entered_at": { "type": "string", "format": "date-time" },
+        "successor": { "type": "string", "description": "Replacement ModelVersion ref for deprecated/retired models." }
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,246 @@
+openapi: 3.0.3
+info:
+  title: NOETIVELA Control Plane
+  description: |
+    Registry CRUD, lifecycle governance and (in EE) org policy, audit and
+    tenancy. Multi-tenancy, SSO/IAM and audit are enterprise features; this
+    spec covers the single-tenant core surface.
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081/v1
+paths:
+  /models:
+    get:
+      summary: List registered model profiles
+      responses:
+        '200':
+          description: Model profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ModelProfile' }
+  /models/{id}:
+    get:
+      summary: Get a model profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/ModelProfile' }
+    put:
+      summary: Create or replace a model profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ModelProfile' }
+      responses:
+        '200': { $ref: '#/components/responses/ModelProfile' }
+  /endpoints:
+    get:
+      summary: List inference endpoints
+      responses:
+        '200':
+          description: Endpoints
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/InferenceEndpoint' }
+  /endpoints/{id}:
+    get:
+      summary: Get an endpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Endpoint
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InferenceEndpoint' }
+    put:
+      summary: Create or replace an endpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InferenceEndpoint' }
+      responses:
+        '200':
+          description: Endpoint stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InferenceEndpoint' }
+  /deployments/{id}:
+    put:
+      summary: Create or replace a deployment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Deployment' }
+      responses:
+        '200':
+          description: Deployment stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Deployment' }
+  /lifecycle:
+    get:
+      summary: List lifecycle plans for all model versions
+      responses:
+        '200':
+          description: version_id -> lifecycle plan (with model_ref when resolvable)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    state: { $ref: '#/components/schemas/LifecycleState' }
+                    successor: { type: string }
+                    model_ref: { type: string }
+  /lifecycle/transition:
+    post:
+      summary: Apply a validated lifecycle transition
+      description: |
+        Rejects invalid transitions (e.g. Default -> Retired) and requires a
+        successor for deprecation. State machine arcs are authoritative.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version_id, to]
+              properties:
+                version_id: { type: string }
+                to: { $ref: '#/components/schemas/LifecycleState' }
+                successor: { type: string }
+      responses:
+        '200':
+          description: Updated lifecycle plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LifecyclePlan' }
+        '400':
+          description: Invalid transition
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+  /lifecycle/{id}:
+    get:
+      summary: Get a lifecycle plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lifecycle plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LifecyclePlan' }
+        '404': { description: Version not found }
+components:
+  responses:
+    ModelProfile:
+      description: Model profile
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ModelProfile' }
+  schemas:
+    LifecycleState:
+      type: string
+      enum: [discovered, evaluating, approved, default, restricted, deprecated, retired]
+    LifecyclePlan:
+      type: object
+      properties:
+        state: { $ref: '#/components/schemas/LifecycleState' }
+        state_entered_at: { type: string, format: date-time }
+        successor_id: { type: string }
+    ModelProfile:
+      type: object
+      description: See contracts/schema/model-profile.json.
+      properties:
+        identity:
+          type: object
+          properties:
+            id: { type: string }
+            family: { type: string }
+            provider: { type: string }
+            modalities: { type: array, items: { type: string } }
+        version:
+          type: object
+          properties:
+            id: { type: string }
+            context_window: { type: integer }
+        lifecycle: { $ref: '#/components/schemas/LifecyclePlan' }
+        capability_vector:
+          type: object
+        evaluation:
+          type: object
+          properties:
+            attestation_id: { type: string }
+            grades: { type: object }
+            freshness_deadline: { type: string, format: date-time }
+    Deployment:
+      type: object
+      properties:
+        id: { type: string }
+        model_version_id: { type: string }
+        region: { type: string }
+        runtime: { type: string }
+        hardware: { type: string }
+        capacity_mode: { type: string }
+    InferenceEndpoint:
+      type: object
+      properties:
+        id: { type: string }
+        deployment_id: { type: string }
+        protocol: { type: string, enum: [openai, anthropic, native] }
+        url_ref: { type: string }
+        provider_model_name: { type: string }
+        auth_binding_ref: { type: string }
+        region: { type: string }
+        retention_policy: { type: string }
+        provider_training: { type: boolean }
+        health: { type: string, enum: [healthy, degraded, unhealthy, unknown] }
+        slo:
+          type: object
+          properties:
+            p95_latency_ms: { type: integer }
+            availability: { type: number }
+        price:
+          type: object
+          properties:
+            input_per_mtok: { type: number }
+            output_per_mtok: { type: number }
+            cached_input_per_mtok: { type: number }
+            currency: { type: string }

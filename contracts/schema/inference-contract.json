@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noetivela.axisrobo.dev/contracts/inference-contract.schema.json",
+  "title": "InferenceContract",
+  "description": "Task-level intelligence requirement submitted by applications/agents. Declares WHAT intelligence is needed, never WHICH vendor endpoint provides it.",
+  "type": "object",
+  "required": ["task", "modality"],
+  "properties": {
+    "task": {
+      "type": "string",
+      "description": "Task type identifier, e.g. contract_clause_extraction, code_generation, classification.",
+      "examples": ["contract_clause_extraction"]
+    },
+    "domain": { "type": "string", "examples": ["legal", "software_engineering"] },
+    "language": { "type": "array", "items": { "type": "string" }, "examples": [["zh", "en"]] },
+    "modality": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["text", "image", "audio", "video", "embedding", "rerank", "structured"] }
+    },
+    "tool_use": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean", "default": false },
+        "parallel_calls": { "type": "boolean", "default": false },
+        "strict_schema": { "type": "boolean", "default": false }
+      }
+    },
+    "response_schema": {
+      "type": "string",
+      "description": "Reference to a registered structured-output schema, e.g. legal_clause_v3."
+    },
+    "quality": {
+      "type": "object",
+      "properties": {
+        "minimum_eval_grade": { "type": "string", "description": "Minimum TEKMOVELA attested grade, e.g. A-, B+.", "examples": ["A-"] },
+        "minimum_eval_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "uncertainty_requirement": { "type": "string", "enum": ["none", "self_report", "calibrated"] },
+        "grounding_required": { "type": "boolean", "default": false }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "properties": {
+        "ttft_ms": { "type": "integer", "minimum": 0 },
+        "p95_ms": { "type": "integer", "minimum": 0 },
+        "deadline_ms": { "type": "integer", "minimum": 0, "description": "Hard end-to-end deadline; treated as a hard gate." },
+        "streaming": { "type": "boolean", "default": false }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "ceiling_per_request": { "type": "string", "description": "Absolute amount or policy reference, e.g. policy:legal-standard." },
+        "budget_account": { "type": "string" },
+        "cost_vs_quality": { "type": "string", "enum": ["min_cost", "balanced", "max_quality"], "default": "balanced" }
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "max_input_tokens": { "type": "integer", "minimum": 1 },
+        "session_id": { "type": "string", "description": "Enables session affinity and prefix-cache locality." },
+        "cache_key": { "type": "string" },
+        "prefer_cache_locality": { "type": "boolean", "default": true },
+        "data_references": { "type": "array", "items": { "type": "string" }, "description": "References into GNOSIVELA-managed data; NOETIVELA never owns the data." }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "description": "Hard gates. A router must never trade these off via weighted scoring.",
+      "properties": {
+        "data_classification": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] },
+        "allowed_regions": { "type": "array", "items": { "type": "string" }, "examples": [["sg", "cn-north"]] },
+        "denied_providers": { "type": "array", "items": { "type": "string" } },
+        "allowed_models": { "type": "array", "items": { "type": "string" }, "description": "ModelIdentity refs, not provider model names." },
+        "provider_training": { "type": "string", "enum": ["allowed", "prohibited"], "default": "prohibited" },
+        "retention": { "type": "string", "enum": ["none", "short", "provider_default"], "default": "none" }
+      }
+    },
+    "reliability": {
+      "type": "object",
+      "properties": {
+        "retry_budget": { "type": "integer", "minimum": 0, "default": 2 },
+        "fallback": { "type": "string", "enum": ["none", "same-or-higher-quality", "any-compliant", "degrade-allowed"], "default": "same-or-higher-quality" },
+        "idempotency_key": { "type": "string" },
+        "acceptable_degradation": { "type": "string", "description": "Explicit degradation semantics if fallback=degrade-allowed." }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "required_attestation": { "type": "string", "description": "TEKMOVELA attestation id/class required for eligibility." },
+        "max_model_age_days": { "type": "integer", "minimum": 0 },
+        "decision_trace_level": { "type": "string", "enum": ["minimal", "standard", "full"], "default": "standard" }
+      }
+    }
+  },
+  "additionalProperties": false
+}

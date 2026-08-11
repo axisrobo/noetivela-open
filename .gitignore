@@ -1,0 +1,26 @@
+# Node
+node_modules/
+dist/
+dist-test/
+*.tsbuildinfo
+
+# Binaries
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist-python/
+.pytest_cache/
+
+# Env / secrets
+.env
+*.local
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

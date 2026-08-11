@@ -1,0 +1,301 @@
+openapi: 3.0.3
+info:
+  title: NOETIVELA Inference Data Plane
+  description: |
+    OpenAI-compatible inference entry point. Applications submit task
+    requirements via InferenceContract (or contract reference); NOETIVELA
+    returns the result plus an explainable RoutingDecision and normalized usage.
+    Provider credentials and model IDs never appear at the application layer.
+  version: 0.1.0
+servers:
+  - url: http://localhost:8080/v1
+paths:
+  /chat/completions:
+    post:
+      summary: OpenAI-compatible chat with governed routing
+      parameters:
+        - name: X-Noetivela-Contract
+          in: header
+          schema: { type: string }
+          description: Inline InferenceContract (YAML/JSON) or contract reference.
+        - name: X-Noetivela-Policy
+          in: header
+          schema: { type: string }
+          description: RoutingPolicy name/version override.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChatRequest' }
+      responses:
+        '200':
+          description: Normalized result with routing evidence
+          headers:
+            X-Noetivela-Decision-Id:
+              schema: { type: string, format: uuid }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatResponse' }
+        '422':
+          description: Contract unsatisfiable - no eligible candidate after hard gates
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UnsatisfiableContract' }
+  /embeddings:
+    post:
+      summary: Embedding inference with governed routing
+      description: |
+        Only embedding-capable endpoints are eligible; the chosen endpoint is
+        a routing decision. Differences in dimensions and normalization are
+        explicit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model, input]
+              properties:
+                model: { type: string }
+                input: { type: array, items: { type: string } }
+                dimensions: { type: integer }
+      responses:
+        '200':
+          description: Embedding vectors + routing evidence
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: { type: number }
+                  dimensions: { type: integer }
+                  usage: { $ref: '#/components/schemas/NormalizedUsage' }
+  /contracts/validate:
+    post:
+      summary: Check contract feasibility without consuming any tokens
+      description: |
+        Validates schema and hard-gate feasibility. Applications call this
+        before sending traffic; no endpoint is invoked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contract: { $ref: '#/components/schemas/InferenceContractBody' }
+                policy: { type: string }
+      responses:
+        '200':
+          description: Feasibility verdict with per-candidate eligibility
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid: { type: boolean }
+                  satisfiable: { type: boolean }
+                  policy: { type: string }
+                  candidates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EligibleCandidate'
+  /eligible:
+    post:
+      summary: Ranked eligible candidate set without executing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contract: { $ref: '#/components/schemas/InferenceContractBody' }
+                policy: { type: string }
+      responses:
+        '200':
+          description: Ranked eligible candidates + selection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ranked:
+                    type: array
+                    items: { $ref: '#/components/schemas/EligibleCandidate' }
+                  selection:
+                    type: object
+                    properties:
+                      endpoint_ref: { type: string }
+  /train:
+    post:
+      summary: Train/refresh the learned router on collected evidence
+      description: |
+        Fits the router on the gateway's bounded, prompt-free evidence
+        collector, registers the result as a governed router ModelProfile
+        (family=noetivela-router), and swaps it into live routing. A learned
+        router only re-ranks the eligible set — it never changes eligibility.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version_id]
+              properties:
+                version_id: { type: string }
+                min_samples: { type: integer }
+                tcos_weight: { type: number }
+                hold_out_frac: { type: number }
+      responses:
+        '200':
+          description: Trained router version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version_id: { type: string }
+                  trained_samples: { type: integer }
+                  validate_mae: { type: number }
+                  min_confidence: { type: number }
+        '422':
+          description: No training samples collected
+  /replay:
+    post:
+      summary: Counterfactual replay of recorded usage vs a fixed baseline
+      description: |
+        Re-routes the usage ledger through the named policy and compares
+        quality-adjusted TCoS against a fixed baseline endpoint. This is the
+        acceptance evidence for any routing-savings claim (NIF-Bench replay).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [baseline_endpoint]
+              properties:
+                baseline_endpoint: { type: string }
+                policy: { type: string }
+                limit: { type: integer }
+      responses:
+        '200':
+          description: Replay comparison
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records: { type: integer }
+                  savings_percent: { type: number }
+                  verdict: { type: string }
+                  baseline: { $ref: '#/components/schemas/StrategyResult' }
+                  routed: { $ref: '#/components/schemas/StrategyResult' }
+        '400':
+          description: Unknown baseline endpoint or invalid policy
+  /decisions/{decisionId}:
+    get:
+      summary: Retrieve the RoutingDecision for a prior request
+      parameters:
+        - name: decisionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: RoutingDecision (see schema/routing-decision.json)
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      description: OpenAI-compatible body; model field accepts a NOETIVELA alias, never a provider model ID.
+      required: [model, messages]
+      properties:
+        model: { type: string, description: "Model alias or 'auto' (contract-driven routing)" }
+        messages: { type: array, items: { type: object } }
+        stream: { type: boolean, default: false }
+        tools: { type: array, items: { type: object } }
+        response_format: { type: object }
+    ChatResponse:
+      type: object
+      properties:
+        id: { type: string }
+        choices: { type: array, items: { type: object } }
+        usage: { $ref: '#/components/schemas/NormalizedUsage' }
+        noetivela:
+          type: object
+          properties:
+            decision_id: { type: string, format: uuid }
+            model_ref: { type: string }
+            endpoint_ref: { type: string }
+            tcos: { $ref: '#/components/schemas/TCoSBreakdown' }
+    NormalizedUsage:
+      type: object
+      description: Provider-specific token classes are normalized, never dropped.
+      properties:
+        input_tokens: { type: integer }
+        output_tokens: { type: integer }
+        cached_tokens: { type: integer }
+        reasoning_tokens: { type: integer }
+        provider_specific:
+          type: object
+          additionalProperties: { type: integer }
+    TCoSBreakdown:
+      type: object
+      properties:
+        direct_inference: { type: number }
+        router_overhead: { type: number }
+        context_movement: { type: number }
+        cache_loss: { type: number }
+        reliability_cost: { type: number }
+        total: { type: number }
+    UnsatisfiableContract:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            type: { const: unsatisfiable_contract }
+            failed_gates:
+              type: array
+              items:
+                type: object
+                properties:
+                  gate: { type: string }
+                  reason: { type: string }
+            message: { type: string }
+    InferenceContractBody:
+      type: object
+      description: Task-level intelligence requirement; see schema/inference-contract.json.
+      properties:
+        task: { type: string }
+        modality: { type: array, items: { type: string } }
+        policy:
+          type: object
+          properties:
+            allowed_regions: { type: array, items: { type: string } }
+            provider_training: { type: string }
+            retention: { type: string }
+    EligibleCandidate:
+      type: object
+      description: External candidate view - endpoint internals never exposed.
+      properties:
+        model_ref: { type: string }
+        endpoint_ref: { type: string }
+        eligible: { type: boolean }
+        filter_reasons: { type: array, items: { type: string } }
+        score: { type: number }
+    StrategyResult:
+      type: object
+      properties:
+        strategy: { type: string }
+        total_tcos: { type: number }
+        total_quality: { type: number }
+        quality_adjusted_tcos: { type: number }
+        served_count: { type: integer }
+        denied_count: { type: integer }

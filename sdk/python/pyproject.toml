@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "noetivela"
+version = "0.1.0a0"
+description = "NOETIVELA Inference Fabric client - governed model routing (Apache-2.0)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "AxisRobo Architecture & Research Program" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+[tool.setuptools.packages.find]
+include = ["noetivela*"]
+

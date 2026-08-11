@@ -1,0 +1,35 @@
+(* NOETIVELA Routing Policy DSL — EBNF grammar, v0.1 *)
+
+policy        = "policy" ident "{" { clause } "}" ;
+clause        = require | prefer | optimize | fallback | switch ;
+
+require       = "require" expr ;
+prefer        = "prefer" ident "weight" number ;
+optimize      = "optimize" [ "lexicographic" ] dim_weight { dim_weight } ;
+fallback      = "fallback" fallback_class [ "max_attempts" integer ] ;
+switch        = "switch" "only_if" "expected_gain" ">=" number
+                [ "min_hold_seconds" integer ] ;
+
+dim_weight    = dim number ;
+dim           = "quality" | "latency" | "tcos" | "reliability"
+              | "energy" | "capacity" ;
+fallback_class = "none" | "same_or_higher_quality"
+              | "any_compliant" | "degrade_allowed" ;
+
+expr          = or_expr ;
+or_expr       = and_expr { "or" and_expr } ;
+and_expr      = cmp_expr { "and" cmp_expr } ;
+cmp_expr      = operand ( cmp_op operand | "in" list ) ;
+cmp_op        = "==" | "!=" | ">=" | "<=" | ">" | "<" ;
+operand       = path | func_call | literal ;
+path          = ("data" | "model" | "endpoint" | "contract") "." ident
+                { "." ident } ;
+func_call     = "model" "." ("eval" | "capability") "(" string ")" ;
+list          = "[" literal { "," literal } "]" ;
+literal       = string | number | boolean ;
+
+ident         = ( letter | "_" ) { letter | digit | "_" | "-" } ;
+string        = '"' { char } '"' ;
+number        = digit { digit } [ "." digit { digit } ] ;
+integer       = digit { digit } ;
+boolean       = "true" | "false" ;

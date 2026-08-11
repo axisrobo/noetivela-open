@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noetivela.axisrobo.dev/contracts/routing-decision.schema.json",
+  "title": "RoutingDecision",
+  "description": "Explainable per-request routing record: candidates, filter reasons, scores, selection, and policy/evidence versions.",
+  "type": "object",
+  "required": ["decision_id", "contract_ref", "policy_version", "candidates", "selection", "decided_at"],
+  "properties": {
+    "decision_id": { "type": "string", "format": "uuid" },
+    "contract_ref": { "type": "string" },
+    "policy_version": { "type": "string" },
+    "router": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["rule", "learned", "hybrid"] },
+        "router_model_ref": { "type": "string", "description": "Learned router must itself be a registered ModelProfile." },
+        "baseline_available": { "type": "boolean", "description": "Deterministic rule fallback always required." }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["endpoint_ref", "model_ref", "eligible"],
+        "properties": {
+          "endpoint_ref": { "type": "string" },
+          "model_ref": { "type": "string" },
+          "eligible": { "type": "boolean" },
+          "filter_reasons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["gate", "reason"],
+              "properties": {
+                "gate": { "type": "string", "enum": ["policy", "capability", "endpoint", "locality", "lifecycle"] },
+                "reason": { "type": "string", "examples": ["region_not_allowed", "no_tool_use", "context_window_exceeded", "model_retired", "retention_violation"] }
+              }
+            }
+          },
+          "scores": {
+            "type": "object",
+            "properties": {
+              "quality": { "type": "number" },
+              "latency_ms_p95_est": { "type": "number" },
+              "tcos_est": { "type": "number" },
+              "reliability": { "type": "number" },
+              "affinity": { "type": "number" },
+              "drift_risk": { "type": "number" },
+              "total": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "required": ["endpoint_ref", "model_ref"],
+      "properties": {
+        "endpoint_ref": { "type": "string" },
+        "model_ref": { "type": "string" },
+        "reason_codes": { "type": "array", "items": { "type": "string" } },
+        "hysteresis_applied": { "type": "boolean", "description": "True when an incumbent route was kept because expected gain was below the switch threshold." },
+        "session_affinity_applied": { "type": "boolean" }
+      }
+    },
+    "evidence_refs": { "type": "array", "items": { "type": "string" }, "description": "TEKMOVELA attestation refs used in eligibility." },
+    "decided_at": { "type": "string", "format": "date-time" },
+    "decision_latency_ms": { "type": "number", "description": "Router overhead, feeds TCoS accounting." }
+  },
+  "additionalProperties": false
+}
