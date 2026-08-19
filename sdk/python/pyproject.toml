@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "noetivela"
-version = "0.1.0b0"
+version = "1.0.0rc0"
 description = "NOETIVELA Inference Fabric client - governed model routing (Apache-2.0)"
 readme = "README.md"
 requires-python = ">=3.9"

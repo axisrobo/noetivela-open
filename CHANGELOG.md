@@ -7,7 +7,15 @@ aligned with NOETIVELA core / ee minor lines.
 ## [Unreleased]
 
 ### Added
-- (next milestone — see 0.1.0-alpha)
+- RC milestone work — see 1.0.0-rc for the current baseline.
+
+## [1.0.0-rc] - 2026-08-19
+
+### Changed
+- Version surfaces aligned to the core `1.0.0-rc` milestone: Python SDK
+  `1.0.0rc0` (PEP 440), TypeScript SDK `1.0.0-rc`, CLI default
+  `1.0.0-rc` (GoReleaser injects the tag at build time). Go modules
+  keep `v1.0.0`. The already-released `v0.1.0-alpha` tag is left untouched.
 
 ## [0.1.0-alpha] - 2026-08-10
 
