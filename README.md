@@ -1,18 +1,58 @@
-# NOETIVELA-open
+# NOETIVELA
 
-**Model, Routing & Inference Fabric — Open Integration Surface**
+**Model, Routing & Inference Fabric**
 AxisRobo Architecture & Research Program
 
 > **中文文档:** [README.zh-CN.md](README.zh-CN.md)
 
-NOETIVELA is an enterprise inference fabric that catalogs models and endpoints,
-converts task requirements into **governed inference contracts**, and routes each
-request across cloud, private and edge intelligence using policy, quality,
-latency, reliability, locality and total-cost evidence.
+## What is NOETIVELA?
 
-This repository is NOETIVELA's **open integration surface**, licensed under
-**Apache-2.0** so that any product (including closed-source commercial ones) can
-integrate it freely.
+NOETIVELA is an **enterprise inference fabric** that treats model selection as a
+**governed decision**, not a guess. It catalogs the models and endpoints you
+already run (cloud APIs, private NIM/vLLM, edge), turns each task requirement into
+an **Inference Contract**, and routes every request across that catalog using
+policy, quality, latency, reliability, locality and total-cost evidence.
+
+It is **not** an OpenAI-compatible proxy, and it is **not** a "cheap-model auto
+switcher". Those tools add a layer; NOETIVELA adds a control plane.
+
+### The problems it solves
+
+- **Provider fragmentation.** Teams chase the best model across cloud, private
+  and edge endpoints — and end up hard-coding model names into applications,
+  locking them to a single vendor.
+- **No governance in the routing path.** Quality/cost heuristics happily route
+  requests into regions, providers or data classes that policy forbids — because
+  scoring has no idea what the *hard gates* are.
+- **Opaque decisions.** When the wrong model answers, nobody can explain why it
+  was chosen — no audit trail, no replay, no fix.
+- **Runaway cost.** Without per-task cost accounting, spend on frontier models
+  is invisible until the invoice arrives.
+- **Credential sprawl.** Applications hold provider keys directly; tenant
+  isolation, rotation and blast radius are an afterthought.
+- **Model churn.** Canary, shadow, deprecate and retire are manual, risky
+  rituals — so stale models stay in production.
+
+### Core features
+
+| Capability | What it does |
+|---|---|
+| **Model & endpoint lifecycle** | Models, versions, deployments and endpoints are first-class, governed objects — canaried, shadowed, deprecated and retired like code. |
+| **Inference Contract** | The request declares the *need* (`task`, `modality`, regions, data classification, session) — not the model. Applications never hard-code a model name. |
+| **Hard-gate eligibility** | Security, residency, freshness and compatibility gates are evaluated first. A violation **never** gets compensated by weighted scoring; ineligible candidates are simply excluded. |
+| **Multi-objective routing** | Among the eligible set, routing optimizes quality, latency, reliability, locality and total cost — via a readable Routing Policy DSL or learned models. |
+| **TCoS evidence** | Every decision carries a **total cost of serving** breakdown and quality-adjusted economics, so routing is provably cheaper than a fixed frontier baseline. |
+| **Explainable RoutingDecision** | Each request produces an auditable decision trace: why this candidate, what the alternatives were, and what it cost. Replay the ledger to test any policy counterfactually. |
+| **Governance & security** | Tenant-scoped credential isolation (apps never hold keys), budget/quota ceilings that are never routed around, and deny-by-default authorization. |
+
+> For a deeper walkthrough of the routing pipeline, object model and economics,
+> see the [NOETIVELA core README](../NOETIVELA).
+
+## NOETIVELA-open — this repository
+
+NOETIVELA is built as a three-repository family. This repository is its **open
+integration surface**, licensed under **Apache-2.0** so that any product
+(including closed-source commercial ones) can integrate it freely.
 
 | Repository | Role | License |
 |---|---|---|
@@ -20,7 +60,7 @@ integrate it freely.
 | [NOETIVELA](../NOETIVELA) | Core engine implementation (registry, routing, gateway, telemetry) | AGPL-3.0 |
 | [NOETIVELA-ee](../NOETIVELA-ee) | Enterprise edition: multi-tenancy, HA, governance, learned routing | Commercial |
 
-## What's in this repository
+### What's in this repository
 
 | Directory | Contents |
 |---|---|

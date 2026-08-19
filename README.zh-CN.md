@@ -1,17 +1,54 @@
-# NOETIVELA-open
+# NOETIVELA
 
-**Model, Routing & Inference Fabric — 开放集成面**
+**模型、路由与推理织造（Model, Routing & Inference Fabric）**
 AxisRobo Architecture & Research Program
 
 > **English:** [README.md](README.md) · **中文文档:** [README.zh-CN.md](README.zh-CN.md)
 
-> NOETIVELA is an enterprise inference fabric that catalogs models and endpoints,
-> converts task requirements into governed inference contracts, and routes each
-> request across cloud, private and edge intelligence using policy, quality,
-> latency, reliability, locality and total-cost evidence.
+## 什么是 NOETIVELA？
 
-本仓库是 NOETIVELA 的**对外开放面**，采用 **Apache-2.0** 许可，可被任意
-（包括商业闭源）产品自由集成。
+NOETIVELA 是**企业级推理织造（enterprise inference fabric）**，它把模型选择当作
+**受治理的决策**，而不是猜测。它统一目录化你已经在运行的模型与端点（云 API、
+私有 NIM/vLLM、边缘），把每个任务需求转化为**推理契约（Inference Contract）**，
+再基于策略、质量、时延、可靠性、地域与总成本证据，把每次请求路由到目录中的
+合适候选。
+
+它**不是** OpenAI 兼容代理，也**不是**"自动切换便宜模型"的开关。那些工具只是
+加了一层转发；NOETIVELA 加的是一个控制面。
+
+### 解决的问题
+
+- **供应商碎片化。** 团队在云、私有与边缘端点之间追逐最好的模型——结果是在应用
+  里硬编码模型名，被单一供应商锁定。
+- **路由路径缺乏治理。** 质量/成本启发式算法会把请求路由到策略禁止的区域、供应商
+  或数据级别——因为打分完全不知道哪些是**硬门禁（hard gate）**。
+- **决策不透明。** 模型答错时，没人能解释为什么选它——没有审计轨迹、没有回放、
+  无法修复。
+- **成本失控。** 没有按任务计费，前沿模型的支出要到账单寄来才被发现。
+- **凭据散落。** 应用直接持有各 provider 的 key；租户隔离、轮换与爆炸半径都是
+  事后才考虑的事。
+- **模型更替阵痛。** 金丝雀、影子、弃用、退役全靠手工、有风险——于是陈旧模型
+  一直留在生产环境。
+
+### 核心能力
+
+| 能力 | 作用 |
+|---|---|
+| **模型与端点生命周期** | 模型、版本、部署与端点是头等、受治理的对象——像代码一样金丝雀、影子、弃用与退役。 |
+| **推理契约** | 请求声明的是*需求*（`task`、`modality`、地域、数据级别、会话）——而不是模型名。应用从不硬编码模型。 |
+| **硬门禁候选集** | 安全、地域、新鲜度与兼容性门禁先评估。违规**绝不被加权打分补偿**；不合格候选直接剔除。 |
+| **多目标路由** | 在合格候选集中，基于质量、时延、可靠性、地域与总成本做优化——通过可读的路由策略 DSL 或学习模型。 |
+| **TCoS 证据** | 每次决策都携带**服务总成本（TCoS）**分解与质量调整后的经济账，路由被证明比固定前沿模型基线更省。 |
+| **可解释的路由决策** | 每个请求都产生可审计的决策轨迹：为什么选它、备选是什么、花了多少。可用账本反事实回放任何策略。 |
+| **治理与安全** | 租户级凭据隔离（应用不持 key）、绝不绕过的预算/配额上限、默认拒绝的授权。 |
+
+> 关于路由流水线、对象模型与经济的深入说明，见
+> [NOETIVELA core README](../NOETIVELA)。
+
+## NOETIVELA-open —— 本仓库
+
+NOETIVELA 由三个仓库组成。本仓库是其**对外开放面**，采用 **Apache-2.0** 许可，
+可被任意（包括商业闭源）产品自由集成。
 
 | 仓库 | 角色 | 许可 |
 |---|---|---|
@@ -19,7 +56,7 @@ AxisRobo Architecture & Research Program
 | [NOETIVELA](../NOETIVELA) | 核心引擎实现 | AGPL-3.0 |
 | [NOETIVELA-ee](../NOETIVELA-ee) | 企业版高价值功能 | 商业许可 |
 
-## 本仓库包含什么
+### 本仓库包含什么
 
 | 目录 | 内容 |
 |---|---|
