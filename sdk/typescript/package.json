@@ -1,6 +1,6 @@
 {
   "name": "@axisrobo/noetivela",
-  "version": "1.0.0-rc",
+  "version": "1.0.0",
   "description": "NOETIVELA Inference Fabric client — governed model routing (Apache-2.0)",
   "license": "Apache-2.0",
   "type": "module",

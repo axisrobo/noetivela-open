@@ -6,8 +6,10 @@ aligned with NOETIVELA core / ee minor lines.
 
 ## [Unreleased]
 
-### Added
-- RC milestone work — see 1.0.0-rc for the current baseline.
+## [1.0.0] - 2026-08-21
+
+### Changed
+- Version surfaces aligned to core `1.0.0` pure semver: Python `1.0.0`, TypeScript `1.0.0`, Go `v1.0.0`, CLI `1.0.0`; open and core share same tag, ee independent.
 
 ## [1.0.0-rc] - 2026-08-19
 
