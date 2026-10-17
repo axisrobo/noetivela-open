@@ -16,7 +16,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/axisvela/noetivela-open/sdk/go/client"
+	"github.com/axisvela/noetivela-open/sdk/go/v3/client"
 )
 
 var baseURL = flag.String("url", defaultURL(), "NOETIVELA gateway base URL (default $NOETIVELA_URL or http://localhost:8080)")

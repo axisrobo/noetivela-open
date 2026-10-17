@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/axisvela/noetivela-open/sdk/go/client"
+	"github.com/axisvela/noetivela-open/sdk/go/v3/client"
 )
 
 // mockGateway mimics the NOETIVELA data-plane surface the SDK talks to. It

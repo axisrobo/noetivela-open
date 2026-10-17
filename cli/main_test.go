@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/axisvela/noetivela-open/sdk/go/client"
+	"github.com/axisvela/noetivela-open/sdk/go/v3/client"
 )
 
 func TestCLIValidateEndToEnd(t *testing.T) {
