@@ -67,4 +67,4 @@ aligned with NOETIVELA core / ee minor lines.
   dataset upload (`samples`) for TEKMOVELA offline training; versions
   aligned to `0.1.0-alpha` (Go modules keep `v0.1.0`).
 
-[0.1.0-alpha]: https://github.com/axisrobo/NOETIVELA-open/releases/tag/v0.1.0-alpha
+[0.1.0-alpha]: https://github.com/axisvela/NOETIVELA-open/releases/tag/v0.1.0-alpha

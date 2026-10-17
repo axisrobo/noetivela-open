@@ -7,13 +7,13 @@ Submit Inference Contracts instead of hard-coding a provider model ID.
 ## Install
 
 ```bash
-npm install @axisrobo/noetivela
+npm install @axisvela/noetivela
 ```
 
 ## Usage
 
 ```typescript
-import { Client, Contract } from "@axisrobo/noetivela";
+import { Client, Contract } from "@axisvela/noetivela";
 
 const c = new Client("http://localhost:8080", {
   contract: {

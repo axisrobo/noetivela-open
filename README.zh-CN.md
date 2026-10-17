@@ -88,7 +88,7 @@ go run ./examples/quickstart
 ```
 
 ```go
-import "github.com/axisrobo/noetivela-open/sdk/go/client"
+import "github.com/axisvela/noetivela-open/sdk/go/client"
 
 c := client.New("http://localhost:8080").WithContract(&client.Contract{
     Task:     "contract_clause_extraction",
@@ -116,7 +116,7 @@ contract → validate → eligible → chat → decision trace。
 （linux / darwin / windows × amd64 / arm64，含 `checksums.txt`），或源码构建：
 
 ```bash
-git clone https://github.com/axisrobo/noetivela-open.git
+git clone https://github.com/axisvela/noetivela-open.git
 cd noetivela-open/cli
 go build -o noetivela .      # 然后放入 PATH
 ```

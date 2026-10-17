@@ -95,7 +95,7 @@ go run ./examples/quickstart
 ```
 
 ```go
-import "github.com/axisrobo/noetivela-open/sdk/go/client"
+import "github.com/axisvela/noetivela-open/sdk/go/client"
 
 c := client.New("http://localhost:8080").WithContract(&client.Contract{
     Task:     "contract_clause_extraction",
@@ -124,7 +124,7 @@ governed pipeline: contract → validate → eligible → chat → decision trac
 with `checksums.txt`), or build from source:
 
 ```bash
-git clone https://github.com/axisrobo/noetivela-open.git
+git clone https://github.com/axisvela/noetivela-open.git
 cd noetivela-open/cli
 go build -o noetivela .      # then place it on your PATH
 ```

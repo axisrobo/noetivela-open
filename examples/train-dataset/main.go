@@ -18,7 +18,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/axisrobo/noetivela-open/sdk/go/client"
+	"github.com/axisvela/noetivela-open/sdk/go/client"
 )
 
 func main() {

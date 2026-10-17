@@ -1,7 +1,7 @@
-module github.com/axisrobo/noetivela-open/examples/train-dataset
+module github.com/axisvela/noetivela-open/examples/train-dataset
 
 go 1.23
 
-require github.com/axisrobo/noetivela-open/sdk/go v0.1.0
+require github.com/axisvela/noetivela-open/sdk/go v0.1.0
 
-replace github.com/axisrobo/noetivela-open/sdk/go => ../../sdk/go
+replace github.com/axisvela/noetivela-open/sdk/go => ../../sdk/go
